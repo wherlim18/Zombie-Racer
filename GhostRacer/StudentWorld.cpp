@@ -85,13 +85,6 @@ int StudentWorld::move()
     // This code is here merely to allow the game to build, run, and terminate after you hit enter.
     // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
     
-    //Set Game Stat
-    ostringstream oss;
-    oss << "Score: " << getScore() << setw(7) << "Lvl: " << getLevel() << setw(14) << "Souls2Save: " << 2*getLevel()+5 << setw(9) << "Lives: " << getLives() << setw(10) << "Health: " << getPlayer()->getHP() << setw(10) << "Sprays: " << getPlayer()->getSpray() << setw(9) << "Bonus: " << getScore();
-    string s = oss.str();
-    
-    setGameStatText(s);
-    
     // Tell ghost racer to move
     if (m_player->isAlive())
     {
@@ -119,6 +112,15 @@ int StudentWorld::move()
         if(!getPlayer()->isAlive())
         {
             return GWSTATUS_PLAYER_DIED;
+        }
+        
+        if(getSoulSaved() == 2*getLevel()+5)
+        {
+            this->playSound(SOUND_FINISHED_LEVEL);
+            resetSoulSaved();
+            increaseScore(getBonusPoints());
+            resetBonusPoints();
+            return GWSTATUS_FINISHED_LEVEL;
         }
     }
     
@@ -182,6 +184,49 @@ int StudentWorld::move()
         m_actors.push_front(new ZombiePedestrian(this, rand_x, VIEW_HEIGHT));
     }
     
+    //Oil Slick
+    int ChanceOilSlick = max(150 - (getLevel()*10), 40);
+    
+    random = randInt(0, ChanceOilSlick-1);
+    
+    if(random == 0)
+    {
+        int rand_x = randInt(LEFT_EDGE, RIGHT_EDGE);
+        m_actors.push_front(new OilSlick(this, rand_x, VIEW_HEIGHT));
+    }
+    
+    //Holy Water Refill Goodies
+    
+    int ChanceOfHolyWater = 100 + 10 * getLevel();
+    random = randInt(0, ChanceOfHolyWater-1);
+    
+    if(random == 0)
+    {
+        int rand_x = randInt(LEFT_EDGE, RIGHT_EDGE);
+        m_actors.push_front(new HolyWaterGoodie(this, rand_x, VIEW_HEIGHT));
+    }
+    
+    //Lost Soul Goodies
+    
+    int ChanceOfLostSoul = 100;
+    random = randInt(0, ChanceOfLostSoul-1);
+    
+    if(random == 0)
+    {
+        int rand_x = randInt(LEFT_EDGE, RIGHT_EDGE);
+        m_actors.push_front(new SoulGoodie(this, rand_x, VIEW_HEIGHT));
+    }
+    
+    //Set Game Stats
+    ostringstream oss;
+    oss << "Score: " << getScore() << setw(7) << "Lvl: " << getLevel() << setw(14) << "Souls2Save: " << 2*getLevel()+5 - getSoulSaved() << setw(9) << "Lives: " << getLives() << setw(10) << "Health: " << getPlayer()->getHP() << setw(10) << "Sprays: " << getPlayer()->getSpray() << setw(9) << "Bonus: " << getBonusPoints();
+    string s = oss.str();
+    
+    setGameStatText(s);
+    
+    reduceBonusPoints();
+    
+    //Continue Game
     return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -239,6 +284,21 @@ bool StudentWorld::overlaps(Actor* subject, Actor* object) const
     
 }
 
+void StudentWorld::recordSoulSaved()
+{
+    m_soulSaved += 1;
+}
+
+int StudentWorld::getSoulSaved() const
+{
+    return m_soulSaved;
+}
+
+void StudentWorld::resetSoulSaved()
+{
+    m_soulSaved = 0;
+}
+
 bool StudentWorld::isCollisionWorthyObjects(Actor* p)
 {
     if(p->isCollisionAvoidanceWorthy())
@@ -249,3 +309,117 @@ bool StudentWorld::isCollisionWorthyObjects(Actor* p)
     return false;
 }
 
+bool StudentWorld::sprayFirstAppropriateActor(Actor *p)
+{
+    list<Actor*>::iterator it = m_actors.begin();
+    
+    for(; it != m_actors.end(); it++)
+    {
+        if(overlaps(p, *it))
+        {
+            if((*it)->beSprayedIfAppropriate())
+                return true;
+        }
+    }
+    return false;
+}
+
+void StudentWorld::addNewSpray(double x, double y, int dir)
+{
+    m_actors.push_front(new Spray(this, x, y, dir));
+}
+
+void StudentWorld::addNewHealingGoodie(double x, double y)
+{
+    m_actors.push_front(new HealingGoodie(this, x, y));
+}
+bool StudentWorld::zombieCabDetect(ZombieCab *p, int direction)
+{
+    int current_x = p->getX();
+    int x_min = 0;
+    int x_max = 0;
+    
+    //Determine lane
+    if(current_x >= LEFT_EDGE && current_x < LEFT_EDGE + ROAD_WIDTH/3)
+    {
+        x_min = LEFT_EDGE;
+        x_max = LEFT_EDGE + ROAD_WIDTH/3;
+    }
+    else if(current_x >= LEFT_EDGE + ROAD_WIDTH/3 && current_x < RIGHT_EDGE-ROAD_WIDTH/3)
+    {
+        x_min = LEFT_EDGE+ROAD_WIDTH/3;
+        x_max = RIGHT_EDGE-ROAD_WIDTH/3;
+    }
+    else
+    {
+        x_min = RIGHT_EDGE-ROAD_WIDTH/3;
+        x_max = RIGHT_EDGE;
+    }
+    
+    int current_y = p->getY();
+    
+    int closest_y = 99999;
+    
+    Actor* target = nullptr;
+    
+    if(direction == 0)
+    {
+        list<Actor*>::iterator it = m_actors.begin();
+        
+        for(; it != m_actors.end(); it++)
+        {
+            int object_x = (*it)->getX();
+            
+            if((*it)->isCollisionAvoidanceWorthy() && object_x >= x_min && object_x < x_max)
+            {
+                int difference = (*it)->getY() - current_y < closest_y;
+                if(abs(difference) < closest_y && difference < 0)
+                {
+                    closest_y = difference;
+                    target = (*it);
+                }
+            }
+        }
+    }
+    else if (direction == 1)
+    {
+        list<Actor*>::iterator it = m_actors.begin();
+        
+        for(; it != m_actors.end(); it++)
+        {
+            int object_x = (*it)->getX();
+            
+            if((*it)->isCollisionAvoidanceWorthy() && object_x >= x_min && object_x < x_max)
+            {
+                int difference = (*it)->getY() - current_y < closest_y;
+                if(abs(difference) < closest_y && difference > 0)
+                {
+                    closest_y = difference;
+                    target = (*it);
+                }
+            }
+        }
+    }
+    
+    if(abs(closest_y) < 96 && target != getPlayer())
+    {
+        return true;
+    }
+    
+    return false;
+}
+
+void StudentWorld::reduceBonusPoints()
+{
+    m_bonusPoints -= 1;
+}
+
+int StudentWorld::getBonusPoints() const
+{
+    return m_bonusPoints;
+}
+
+void StudentWorld::resetBonusPoints()
+{
+    m_bonusPoints = 5000;
+}

@@ -33,24 +33,31 @@ public:
     
     //Soul Saved
     void recordSoulSaved();
+    int getSoulSaved() const;
+    void resetSoulSaved();
     
     //Spray
     bool sprayFirstAppropriateActor(Actor* p);
+    void addNewSpray(double x, double y, int dir);
     
     //Identify functions
     bool isCollisionWorthyObjects(Actor* p);
-    
-    //Chances
-    int ChancesHumanPed() const;
-    int ChanceOfHolyWater() const;
-    int ChanceOilSlick() const;
-    int ChanceZombiePed() const;
-    int ChanceOfLostSoul() const;
+    bool zombieCabDetect(ZombieCab* p, int direction);
 
+    //Bonus points
+    void reduceBonusPoints();
+    int getBonusPoints() const;
+    void resetBonusPoints();
+    
+    //Goodies
+    void addNewHealingGoodie(double x, double y);
+    
 private:
     GhostRacer* m_player;
     list<Actor*> m_actors;
     int lastY = 0;
+    int m_soulSaved = 0;
+    int m_bonusPoints = 5000;
     //int numberOfObjects = 0;
     
 };

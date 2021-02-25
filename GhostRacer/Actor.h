@@ -36,9 +36,9 @@ public:
     
     virtual bool isCollisionAvoidanceWorthy() const;
     
-    virtual int doSomethingWhenHit() = 0;
+    virtual int doSomethingWhenHit();
     
-    //virtual bool beSprayedIfAppropriate();
+    virtual bool beSprayedIfAppropriate();
     
     //Hit Related
     bool isHit();
@@ -66,6 +66,8 @@ class Agent: public Actor
 {
 public:
     Agent(StudentWorld* world, int imageID, double x, double y, int dir, double size, int verticalSpeed, int horizontalSpeed, int hp);
+    
+    virtual bool isCollisionAvoidanceWorthy() const;
     
     //Health related
     int getHP() const;
@@ -97,8 +99,6 @@ public:
     void increaseSprays(int amount);
     
     void spin();
-
-    virtual int doSomethingWhenHit() {return 0;};
     
     //virtual int soundWhenDie();
     
@@ -110,14 +110,32 @@ private:
     
 };
 
+// Base Class: Ghost Racer Activated Object
+
+class GhostRacerActivatedObject: public Actor
+{
+public:
+    GhostRacerActivatedObject(StudentWorld* world, int imageID, double x, double y, double size, int dir);
+    
+    virtual bool beSprayedIfAppropriate();
+    
+    virtual void doActivity(GhostRacer* gr) = 0;
+    
+    virtual int getScoreIncrease() const = 0;
+    
+    virtual bool selfDestructs() const = 0;
+    
+    virtual bool isSprayable() const = 0;
+    
+private:
+    
+};
 
 // Base Class: Pedestrians
 class Pedestrian: public Agent
 {
 public:
     Pedestrian(StudentWorld* world, int imageID, double startX, double startY, double size);
-    
-    virtual bool isCollisionAvoidanceWorthy() const;
     
     //Speed
     void setHorizSpeed(int s);
@@ -139,7 +157,6 @@ class BorderLine: public Actor
 public:
     BorderLine(StudentWorld* world, int imageID, double startX, double startY);
     virtual void doSomething();
-    virtual int doSomethingWhenHit() {return 0;};
     
 private:
     
@@ -155,19 +172,20 @@ public:
     
     virtual int doSomethingWhenHit();
     
-    //virtual bool beSprayedIfAppropriate();
+    virtual bool beSprayedIfAppropriate();
     
 private:
     
 };
+
+// Derived Class: Zombie Pedestrian
 
 class ZombiePedestrian: public Pedestrian
 {
 public:
     ZombiePedestrian(StudentWorld* world, double x, double y);
     virtual void doSomething();
-    //virtual bool beSprayedIfAppropriate();
-    //virtual bool takeDamageAndPossiblyDie(int hp);
+    virtual bool beSprayedIfAppropriate();
     virtual int doSomethingWhenHit();
     
     //Grunts
@@ -177,6 +195,99 @@ public:
     
 private:
     int m_untilGrunt = 0;
+};
+
+// Derived Class: Zombie Cab
+class ZombieCab: public Agent
+{
+public:
+    ZombieCab(StudentWorld* world, double x, double y);
+    virtual void doSomething();
+    virtual bool isCollisionAvoidanceWorthy() const;
+    
+    //Plan
+    void moveAndPossiblyPickPlan();
+    int getMovementPlanDistance() const;
+    void setMovementPlanDistance(int distance); 
+    
+    //virtual bool beSprayedIfAppropriate();
+    
+    //Damaged Ghost Racer
+    bool hasDamaged() const;
+    void isDamaging();
+
+private:
+    
+    int m_movementPlanDistance = 0;
+    bool m_hasDamaged = false;
+    
+};
+
+// Derived Class: Spray
+class Spray: public Actor
+{
+public:
+    Spray(StudentWorld* world, double x, double y, int dir);
+    virtual void doSomething();
+    
+    //Maximum travel distance
+    int getMaximumTravel() const;
+    void setMaximumTravel(int max);
+    
+private:
+    int m_maximumTravel;
+};
+
+
+// Derived Class: Oil Slick
+class OilSlick: public GhostRacerActivatedObject
+{
+public:
+    OilSlick(StudentWorld* world, double x, double y);
+    virtual void doSomething();
+    virtual void doActivity(GhostRacer* gr);
+    virtual int getScoreIncrease() const;
+    virtual bool selfDestructs() const;
+    virtual bool isSprayable() const;
+
+private:
+    
+};
+
+//Derived Class: Healing Goodie
+class HealingGoodie : public GhostRacerActivatedObject
+{
+public:
+    HealingGoodie(StudentWorld* world, double x, double y);
+    virtual void doSomething();
+    virtual void doActivity(GhostRacer* gr);
+    virtual int getScoreIncrease() const;
+    virtual bool selfDestructs() const;
+    virtual bool isSprayable() const; 
+};
+
+//Derived Class: Holy Water GOodie
+class HolyWaterGoodie : public GhostRacerActivatedObject
+{
+public:
+    HolyWaterGoodie(StudentWorld* world, double x, double y);
+    virtual void doSomething();
+    virtual void doActivity(GhostRacer* gr);
+    virtual int getScoreIncrease() const;
+    virtual bool selfDestructs() const;
+    virtual bool isSprayable() const;
+};
+
+//Derived Class: Soul Goodie
+class SoulGoodie : public GhostRacerActivatedObject
+{
+public:
+    SoulGoodie(StudentWorld* world, double x, double y);
+    virtual void doSomething();
+    virtual void doActivity(GhostRacer* gr);
+    virtual int getScoreIncrease() const;
+    virtual bool selfDestructs() const;
+    virtual bool isSprayable() const;
 };
 
 #endif // ACTOR_H_
