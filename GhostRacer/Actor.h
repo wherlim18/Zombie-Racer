@@ -14,7 +14,11 @@ using namespace std;
 class Actor: public GraphObject
 {
 public:
+    //Constructor
     Actor(StudentWorld* world, int imageID, double startX, double startY, int startDirection, double size, int depth, double verticalSpeed, double horizontalSpeed);
+    
+    //Destructor
+    virtual ~Actor() {};
     
     //doSomething
     virtual void doSomething() = 0;
@@ -22,15 +26,13 @@ public:
     //Get World
     StudentWorld* getWorld() const;
     
-    //Speed
+    //Speed functions
     double getVerticalSpeed() const;
     double getHorizontalSpeed() const;
     void changeVerticalSpeed(double change);
     void changeHorizontalSpeed(double change);
     void setVerticalSpeed(double set);
     void setHorizontalSpeed(double set); 
-    
-    virtual bool isDamagable() const;
     
     virtual bool isCollisionAvoidanceWorthy() const;
     
@@ -40,7 +42,7 @@ public:
     
     virtual bool moveRelativeToGhostRacerVerticalSpeed(double dx); 
     
-    //Hit Related
+    //Hit Related functions
     bool isHit();
     void gotHit();
     
@@ -49,7 +51,6 @@ public:
     bool isAlive() const;
     void killed();
     
-    //Hit related functions
     
 private:
     bool m_alive = true;
@@ -65,7 +66,11 @@ private:
 class Agent: public Actor
 {
 public:
+    //Constructor
     Agent(StudentWorld* world, int imageID, double x, double y, int dir, double size, double verticalSpeed, double horizontalSpeed, int hp);
+    
+    //Destructor
+    virtual ~Agent() {};
     
     virtual bool isCollisionAvoidanceWorthy() const;
     
@@ -74,11 +79,6 @@ public:
     void increaseHP(int hp);
     void reduceHP(int reduction);
     
-    //virtual bool takeDamageAndPossiblyDie(int hp);
-    
-    //virtual int soundWhenHurt();
-    
-    //virtual int soundWhenDie();
     
 private:
     int m_health;
@@ -89,6 +89,7 @@ private:
 class GhostRacer: public Agent
 {
 public:
+    //Constructor
     GhostRacer(StudentWorld* world, double x, double y);
     
     //doSomething
@@ -98,9 +99,6 @@ public:
     int getSpray() const;
     void increaseSprays(int amount);
     
-    void spin();
-    
-    //virtual int soundWhenDie();
     
 protected:
     void moveGhostRacer();
@@ -138,7 +136,6 @@ public:
     Pedestrian(StudentWorld* world, int imageID, double startX, double startY, double size);
     
     //Plan
-    void moveAndPossiblyPickPlan();
     void decrementMovementPlan();
     int getMovementPlanDistance() const;
     void setMovementPlanDistance(int distance);
@@ -152,7 +149,10 @@ private:
 class BorderLine: public Actor
 {
 public:
+    //Constructor
     BorderLine(StudentWorld* world, int imageID, double startX, double startY);
+    
+    //doSomething
     virtual void doSomething();
     
 private:
@@ -183,7 +183,6 @@ public:
     ZombiePedestrian(StudentWorld* world, double x, double y);
     virtual void doSomething();
     virtual bool beSprayedIfAppropriate();
-    virtual int doSomethingWhenHit();
     
     //Grunts
     int getUntilGrunt() const;

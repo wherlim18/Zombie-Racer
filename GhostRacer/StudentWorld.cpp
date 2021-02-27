@@ -107,7 +107,7 @@ int StudentWorld::move()
                 }
             }
             
-            if(!getPlayer()->isAlive())
+            if(getPlayer()->getHP() <= 0)
             {
                 playSound(SOUND_PLAYER_DIE);
                 resetSoulSaved();
@@ -115,7 +115,7 @@ int StudentWorld::move()
                 return GWSTATUS_PLAYER_DIED;
             }
             
-            if(getSoulSaved() == /*2*getLevel()+5*/ 1)
+            if(getSoulSaved() == 2*getLevel()+5)
             {
                 this->playSound(SOUND_FINISHED_LEVEL);
                 resetSoulSaved();
@@ -127,16 +127,18 @@ int StudentWorld::move()
     }
     
     //Delete all dead objects
-    it = m_actors.begin();
+    list<Actor*>::iterator it2 = m_actors.begin();
     
-    for(; it != m_actors.end(); it++)
+    while(it2 != m_actors.end())
     {
-        if(!(*it)->isAlive())
+        if(!(*it2)->isAlive())
         {
-            delete *it;
-            //numberOfObjects--;
-            m_actors.erase(it);
-            it--;
+            delete *it2;
+            it2 = m_actors.erase(it2);
+        }
+        else
+        {
+            it2++;
         }
     }
     
@@ -144,8 +146,8 @@ int StudentWorld::move()
     
     //Borderline
     
-    double  new_border_y = VIEW_HEIGHT-SPRITE_HEIGHT;
-    double  delta_y = new_border_y - lastY;
+    int  new_border_y = VIEW_HEIGHT-SPRITE_HEIGHT;
+    int  delta_y = new_border_y - lastY;
     
     if(delta_y >= SPRITE_HEIGHT)
     {
@@ -220,7 +222,7 @@ int StudentWorld::move()
     
     // Zombie Cab
     
-    int ChanceVehicle = max(100 - (/*getLevel()*/15*10), 20);
+    int ChanceVehicle = max(100 - (getLevel()*10), 20);
     random = randInt(0, ChanceVehicle-1);
     
     if(random == 0)
@@ -251,8 +253,6 @@ void StudentWorld::cleanUp()
     while(it != m_actors.end())
     {
         delete *it;
-        //numberOfObjects--;
-        //cout << "Number of Objects is " << numberOfObjects << endl;
         it = m_actors.erase(it);
     }
     

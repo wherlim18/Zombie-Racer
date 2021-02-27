@@ -56,10 +56,9 @@ public:
 private:
     GhostRacer* m_player;
     list<Actor*> m_actors;
-    double lastY = 0;
+    int lastY = 0;
     int m_soulSaved = 0;
     int m_bonusPoints = 5000;
-    //int numberOfObjects = 0;
     
 };
 

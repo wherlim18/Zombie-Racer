@@ -15,6 +15,7 @@ using namespace std;
 
 // Actor Implementations
 
+//Constructor
 Actor::Actor(StudentWorld* world, int imageID, double startX, double startY, int startDirection, double size, int depth, double verticalSpeed, double horizontalSpeed): GraphObject(imageID, startX, startY, startDirection, size, depth), m_world(world), m_verticalSpeed(verticalSpeed), m_horizontalSpeed(horizontalSpeed)
 {
     
@@ -31,27 +32,22 @@ double Actor::getVerticalSpeed() const
 {
     return m_verticalSpeed;
 }
-
 double Actor::getHorizontalSpeed() const
 {
     return m_horizontalSpeed;
 }
-
 void Actor::changeVerticalSpeed(double change)
 {
     m_verticalSpeed += change;
 }
-
 void Actor::changeHorizontalSpeed(double change)
 {
     m_horizontalSpeed += change;
 }
-
 void Actor::setVerticalSpeed(double set)
 {
     m_verticalSpeed = set;
 }
-
 void Actor::setHorizontalSpeed(double set)
 {
     m_horizontalSpeed = set;
@@ -62,22 +58,14 @@ bool Actor::isAlive() const
 {
     return m_alive;
 }
-
-bool Actor::isDamagable() const
-{
-    return true;
-}
-
 void Actor::killed()
 {
     this->m_alive = false;
 }
-
 bool Actor::isHit()
 {
     return m_isHit;
 }
-
 void Actor::gotHit()
 {
     m_isHit = true;
@@ -99,6 +87,7 @@ bool Actor::beSprayedIfAppropriate()
     return false;
 }
 
+//Actor move algorithm
 bool Actor::moveRelativeToGhostRacerVerticalSpeed(double dx)
 {
     double vert_speed = getVerticalSpeed() - getWorld()->getPlayer()->getVerticalSpeed();
@@ -122,37 +111,41 @@ bool Actor::moveRelativeToGhostRacerVerticalSpeed(double dx)
 
 // Agent Implementations
 
+//Constructor
 Agent::Agent(StudentWorld* world, int imageID, double x, double y, int dir, double size, double verticalSpeed, double horizontalSpeed, int hp): Actor(world, imageID, x, y, dir, size, 0, verticalSpeed, horizontalSpeed), m_health(hp)
 {
     
 }
 
+//HP related functions
 int Agent::getHP() const
 {
     return m_health;
 }
-
 void Agent::reduceHP(int reduction)
 {
     m_health -= reduction;
 }
-
 void Agent::increaseHP(int hp)
 {
     m_health += hp;
 }
 
+//Collision
 bool Agent::isCollisionAvoidanceWorthy() const
 {
     return true;
 }
 
 // Ghost Racer Implementations
+
+//Constructor
 GhostRacer::GhostRacer(StudentWorld* world, double x, double y): Agent(world, IID_GHOST_RACER, x, y, 90, 4.0, 0, 0, 100), m_spray(10)
 {
     
 }
 
+//GhostRacer's Move Algorithm
 void GhostRacer::moveGhostRacer()
 {
     double max_shift_per_tick = 4.0;
@@ -164,15 +157,16 @@ void GhostRacer::moveGhostRacer()
     moveTo(cur_x + delta_x, cur_y);
 }
 
+//GhostRacer's doSomething()
 void GhostRacer::doSomething()
 {
-    if(!isAlive())
-        return;
-    
     if(getHP() <= 0)
     {
         killed();
     }
+    
+    if(!isAlive())
+        return;
     
     int ch;
     
@@ -181,9 +175,11 @@ void GhostRacer::doSomething()
         if(getDirection() > 90)
         {
             reduceHP(10);
-            getWorld()->playSound(SOUND_VEHICLE_CRASH);
-            setDirection(82);
         }
+        setDirection(82);
+        getWorld()->playSound(SOUND_VEHICLE_CRASH);
+        moveGhostRacer();
+        return;
     }
     
     if(getX() >= RIGHT_EDGE)
@@ -191,9 +187,11 @@ void GhostRacer::doSomething()
         if(getDirection() < 90)
         {
             reduceHP(10);
-            getWorld()->playSound(SOUND_VEHICLE_CRASH);
-            setDirection(98);
         }
+        setDirection(98);
+        getWorld()->playSound(SOUND_VEHICLE_CRASH);
+        moveGhostRacer();
+        return;
     }
     
     if(getWorld()->getKey(ch))
@@ -278,23 +276,27 @@ void GhostRacer::doSomething()
     
 }
 
+//Getter function for m_spray
 int GhostRacer::getSpray() const
 {
     return m_spray;
 }
 
+//Increase Ghost Racer's spray count
 void GhostRacer::increaseSprays(int amount)
 {
     m_spray += amount;
 }
 
 // Ghost Racer Activated Objects Implementations
- 
+
+//Constructor
 GhostRacerActivatedObject::GhostRacerActivatedObject(StudentWorld* world, int imageID, double x, double y, double size, int dir): Actor(world, imageID, x, y, dir, size, 2, -4, 0)
 {
     
 }
 
+//Spray functions
 bool GhostRacerActivatedObject::beSprayedIfAppropriate()
 {
     if(isSprayable())
@@ -310,20 +312,22 @@ bool GhostRacerActivatedObject::beSprayedIfAppropriate()
 
 // Border Line Implementations
 
+//Constructor
 BorderLine::BorderLine(StudentWorld* world, int imageID, double startX, double startY): Actor(world, imageID, startX, startY, 0, 2.0, 2, -4, 0)
 {
     
 }
 
+//Border Line doSomething
 void BorderLine::doSomething()
 {
     double horizSpeed = getHorizontalSpeed();
     moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
-    
 }
 
 // Spray Implementations
 
+//Constructor
 Spray::Spray(StudentWorld* world, double x, double y, int dir): Actor(world, IID_HOLY_WATER_PROJECTILE, x, y, dir, 1.0, 1, 0, 0), m_maximumTravel(160)
 {
     
@@ -371,27 +375,21 @@ void Spray::doSomething()
 
 // Pedestrian Implementations
 
+//Constructor
 Pedestrian:: Pedestrian(StudentWorld* world, int imageID, double startX, double startY, double size): Agent(world, imageID, startX, startY, 0, size, -4, 0, 2)
 {
     
 }
 
-void Pedestrian::moveAndPossiblyPickPlan()
-{
-    double horizSpeed = getHorizontalSpeed();
-    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
-}
-
+//Movement functions
 void Pedestrian::decrementMovementPlan()
 {
     m_movementPlanDistance -= 1;
 }
-
 int Pedestrian::getMovementPlanDistance() const
 {
     return m_movementPlanDistance;
 }
-
 void Pedestrian::setMovementPlanDistance(int distance)
 {
     m_movementPlanDistance = distance;
@@ -399,11 +397,13 @@ void Pedestrian::setMovementPlanDistance(int distance)
 
 // Human Pedestrian Implementations
 
+//Constructor
 HumanPedestrian:: HumanPedestrian(StudentWorld* world, double startX, double startY): Pedestrian(world, IID_HUMAN_PED, startX, startY, 2.0)
 {
 
 }
 
+//Spray
 bool HumanPedestrian::beSprayedIfAppropriate()
 {
     setHorizontalSpeed(getHorizontalSpeed()*(-1));
@@ -412,6 +412,7 @@ bool HumanPedestrian::beSprayedIfAppropriate()
     return true;
 }
 
+//doSomething
 void HumanPedestrian::doSomething()
 {
     if(!isAlive())
@@ -423,7 +424,8 @@ void HumanPedestrian::doSomething()
         return;
     }
     
-    moveAndPossiblyPickPlan();
+    int horizSpeed = getHorizontalSpeed();
+    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
     
     decrementMovementPlan();
     
@@ -454,6 +456,7 @@ void HumanPedestrian::doSomething()
 
 }
 
+//Collision effects
 int HumanPedestrian::doSomethingWhenHit()
 {
     getWorld()->decLives();
@@ -476,9 +479,9 @@ void ZombiePedestrian::doSomething()
     
     if(getWorld()->overlaps(this, getWorld()->getPlayer()))
     {
-        gotHit();
         getWorld()->playSound(SOUND_PED_DIE);
         killed();
+        getWorld()->getPlayer()->reduceHP(5);
         return;
     }
     
@@ -508,7 +511,9 @@ void ZombiePedestrian::doSomething()
             setUntilGrunt(20);
         }
     }
-    moveAndPossiblyPickPlan();
+    
+    int horizSpeed = getHorizontalSpeed();
+    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
     
     if(getMovementPlanDistance() > 0)
     {
@@ -537,13 +542,6 @@ void ZombiePedestrian::doSomething()
     {
         setDirection(0);
     }
-}
-
-
-int ZombiePedestrian::doSomethingWhenHit()
-{
-    getWorld()->getPlayer()->reduceHP(5);
-    return GWSTATUS_CONTINUE_GAME;
 }
 
 int ZombiePedestrian::getUntilGrunt() const
@@ -626,8 +624,6 @@ bool ZombieCab::beSprayedIfAppropriate()
         }
         
         getWorld()->increaseScore(200);
-        
-        return true;
     }
     else
     {
@@ -713,10 +709,12 @@ void ZombieCab::doSomething()
     
     if(getMovementPlanDistance() > 0)
         return;
+    else
+    {
+        setMovementPlanDistance(randInt(4, 32));
     
-    setMovementPlanDistance(randInt(4, 32));
-    
-    changeVerticalSpeed(randInt(-2, 2));
+        changeVerticalSpeed(randInt(-2, 2));
+    }
     
 }
 
