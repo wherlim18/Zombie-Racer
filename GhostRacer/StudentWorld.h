@@ -22,8 +22,7 @@ public:
     virtual void cleanUp();
     
     //LastY functions
-    int getLastY() const;
-    void changeLastY(int new_y);
+    void resetLastY();
     
     //Get Ghost Racer
     GhostRacer* getPlayer() const;
@@ -52,11 +51,12 @@ public:
     
     //Goodies
     void addNewHealingGoodie(double x, double y);
+    void addNewOilSlick(double x, double y);
     
 private:
     GhostRacer* m_player;
     list<Actor*> m_actors;
-    int lastY = 0;
+    double lastY = 0;
     int m_soulSaved = 0;
     int m_bonusPoints = 5000;
     //int numberOfObjects = 0;

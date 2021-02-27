@@ -7,6 +7,7 @@
 
 const int LEFT_EDGE = ROAD_CENTER - ROAD_WIDTH/2;
 const int RIGHT_EDGE = ROAD_CENTER + ROAD_WIDTH/2;
+const double pi = 3.14159265;
 
 using namespace std;
 
@@ -14,7 +15,7 @@ using namespace std;
 
 // Actor Implementations
 
-Actor::Actor(StudentWorld* world, int imageID, double startX, double startY, int startDirection, double size, int depth, int verticalSpeed, int horizontalSpeed): GraphObject(imageID, startX, startY, startDirection, size, depth), m_world(world), m_verticalSpeed(verticalSpeed), m_horizontalSpeed(horizontalSpeed)
+Actor::Actor(StudentWorld* world, int imageID, double startX, double startY, int startDirection, double size, int depth, double verticalSpeed, double horizontalSpeed): GraphObject(imageID, startX, startY, startDirection, size, depth), m_world(world), m_verticalSpeed(verticalSpeed), m_horizontalSpeed(horizontalSpeed)
 {
     
 }
@@ -26,32 +27,32 @@ StudentWorld* Actor::getWorld() const
 }
 
 //Actor Speed
-int Actor::getVerticalSpeed() const
+double Actor::getVerticalSpeed() const
 {
     return m_verticalSpeed;
 }
 
-int Actor::getHorizontalSpeed() const
+double Actor::getHorizontalSpeed() const
 {
     return m_horizontalSpeed;
 }
 
-void Actor::changeVerticalSpeed(int change)
+void Actor::changeVerticalSpeed(double change)
 {
     m_verticalSpeed += change;
 }
 
-void Actor::changeHorizontalSpeed(int change)
+void Actor::changeHorizontalSpeed(double change)
 {
     m_horizontalSpeed += change;
 }
 
-void Actor::setVerticalSpeed(int set)
+void Actor::setVerticalSpeed(double set)
 {
     m_verticalSpeed = set;
 }
 
-void Actor::setHorizontalSpeed(int set)
+void Actor::setHorizontalSpeed(double set)
 {
     m_horizontalSpeed = set;
 }
@@ -98,10 +99,30 @@ bool Actor::beSprayedIfAppropriate()
     return false;
 }
 
+bool Actor::moveRelativeToGhostRacerVerticalSpeed(double dx)
+{
+    double vert_speed = getVerticalSpeed() - getWorld()->getPlayer()->getVerticalSpeed();
+    
+    double horiz_speed = dx;
+    
+    double new_y = getY() + vert_speed;
+    double new_x = getX() + horiz_speed;
+    
+    moveTo(new_x, new_y);
+    
+    
+    if(this->getX() < 0 || this->getX() > VIEW_WIDTH || this->getY() < 0 || this->getY() > VIEW_HEIGHT)
+    {
+        killed();
+        return false;
+    }
+    
+    return true;
+}
 
 // Agent Implementations
 
-Agent::Agent(StudentWorld* world, int imageID, double x, double y, int dir, double size, int verticalSpeed, int horizontalSpeed, int hp): Actor(world, imageID, x, y, dir, size, 0, verticalSpeed, horizontalSpeed), m_health(hp)
+Agent::Agent(StudentWorld* world, int imageID, double x, double y, int dir, double size, double verticalSpeed, double horizontalSpeed, int hp): Actor(world, imageID, x, y, dir, size, 0, verticalSpeed, horizontalSpeed), m_health(hp)
 {
     
 }
@@ -136,7 +157,7 @@ void GhostRacer::moveGhostRacer()
 {
     double max_shift_per_tick = 4.0;
     double direction = this->getDirection();
-    double delta_x = cos(direction*(PI/180.0)) * max_shift_per_tick;
+    double delta_x = cos(direction*(pi/180.0)) * max_shift_per_tick;
     double cur_x = this->getX();
     double cur_y = this->getY();
     
@@ -149,7 +170,9 @@ void GhostRacer::doSomething()
         return;
     
     if(getHP() <= 0)
+    {
         killed();
+    }
     
     int ch;
     
@@ -223,8 +246,8 @@ void GhostRacer::doSomething()
                     double new_x;
                     double new_y;
                     
-                    delta_x = sin(abs_dir * (PI/180)) * SPRITE_HEIGHT;
-                    delta_y = cos(abs_dir * (PI/180)) * SPRITE_HEIGHT;
+                    delta_x = sin(abs_dir * (pi/180)) * SPRITE_HEIGHT;
+                    delta_y = cos(abs_dir * (pi/180)) * SPRITE_HEIGHT;
                     
                     if(cur_dir > 90)
                     {
@@ -294,21 +317,8 @@ BorderLine::BorderLine(StudentWorld* world, int imageID, double startX, double s
 
 void BorderLine::doSomething()
 {
-    int vert_speed = this->getVerticalSpeed() - getWorld()->getPlayer()->getVerticalSpeed();
-    
-    int horiz_speed = this->getHorizontalSpeed();
-    
-    int new_y = this->getY() + vert_speed;
-    int new_x = this->getX() + horiz_speed;
-    
-    this->moveTo(new_x, new_y);
-    
-    
-    if(this->getX() < 0 || this->getX() > VIEW_WIDTH || this->getY() < 0 || this->getY() > VIEW_HEIGHT)
-    {
-        this->killed();
-        return;
-    }
+    double horizSpeed = getHorizontalSpeed();
+    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
     
 }
 
@@ -368,20 +378,8 @@ Pedestrian:: Pedestrian(StudentWorld* world, int imageID, double startX, double 
 
 void Pedestrian::moveAndPossiblyPickPlan()
 {
-    int vert_speed = getVerticalSpeed() - getWorld()->getPlayer()->getVerticalSpeed();
-    int horiz_speed = getHorizontalSpeed();
-    
-    int new_y = getY() + vert_speed;
-    int new_x = getX() + horiz_speed;
-    
-    this->moveTo(new_x, new_y);
-    
-    if(getX() < 0 || getX() > VIEW_WIDTH || getY() > VIEW_HEIGHT || getY() < 0)
-    {
-        this->killed();
-        return;
-    }
-    
+    double horizSpeed = getHorizontalSpeed();
+    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
 }
 
 void Pedestrian::decrementMovementPlan()
@@ -408,7 +406,7 @@ HumanPedestrian:: HumanPedestrian(StudentWorld* world, double startX, double sta
 
 bool HumanPedestrian::beSprayedIfAppropriate()
 {
-    setHorizontalSpeed(getHorizontalSpeed()*-1);
+    setHorizontalSpeed(getHorizontalSpeed()*(-1));
     setDirection(180-getDirection());
     getWorld()->playSound(SOUND_PED_HURT);
     return true;
@@ -459,13 +457,14 @@ void HumanPedestrian::doSomething()
 int HumanPedestrian::doSomethingWhenHit()
 {
     getWorld()->decLives();
+    getWorld()->resetSoulSaved();
     getWorld()->resetBonusPoints();
     return GWSTATUS_PLAYER_DIED;
 }
 
 //Zombie Pedestrian Implementations
 
-ZombiePedestrian::ZombiePedestrian(StudentWorld* world, double x, double y):Pedestrian(world, IID_ZOMBIE_PED, x, y, 3.0)
+ZombiePedestrian::ZombiePedestrian(StudentWorld* world, double x, double y): Pedestrian(world, IID_ZOMBIE_PED, x, y, 3.0)
 {
     
 }
@@ -478,6 +477,7 @@ void ZombiePedestrian::doSomething()
     if(getWorld()->overlaps(this, getWorld()->getPlayer()))
     {
         gotHit();
+        getWorld()->playSound(SOUND_PED_DIE);
         killed();
         return;
     }
@@ -567,9 +567,9 @@ bool ZombiePedestrian::beSprayedIfAppropriate()
     
     if(getHP() <= 0)
     {
-        killed();
-        
         getWorld()->playSound(SOUND_PED_DIE);
+        
+        killed();
         
         int random = randInt(1, 5);
         
@@ -583,20 +583,19 @@ bool ZombiePedestrian::beSprayedIfAppropriate()
         
         getWorld()->increaseScore(150);
     }
+    else
+    {
+        getWorld()->playSound(SOUND_PED_HURT);
+    }
     
     return true;
 }
 
 // Zombie Cab Implementations
 
-ZombieCab::ZombieCab(StudentWorld* world, double x, double y, int verticalSpeed): Agent(world, IID_ZOMBIE_CAB, x, y, 90, 4.0, verticalSpeed, 0, 3)
+ZombieCab::ZombieCab(StudentWorld* world, double x, double y, double verticalSpeed): Agent(world, IID_ZOMBIE_CAB, x, y, 90, 4.0, verticalSpeed, 0, 3)
 {
     
-}
-
-bool ZombieCab::isCollisionAvoidanceWorthy() const
-{
-    return true;
 }
 
 bool ZombieCab::hasDamaged() const
@@ -609,21 +608,39 @@ void ZombieCab::isDamaging()
     m_hasDamaged = true;
 }
 
+bool ZombieCab::beSprayedIfAppropriate()
+{
+    reduceHP(1);
+    
+    if(getHP() <= 0)
+    {
+        getWorld()->playSound(SOUND_VEHICLE_DIE);
+        
+        killed();
+        
+        int random = randInt(1, 5);
+        
+        if(random == 1)
+        {
+            getWorld()->addNewOilSlick(getX(), getY());
+        }
+        
+        getWorld()->increaseScore(200);
+        
+        return true;
+    }
+    else
+    {
+        getWorld()->playSound(SOUND_VEHICLE_HURT);
+    }
+    
+    return true;
+}
+
 void ZombieCab::moveAndPossiblyPickPlan()
 {
-    int vert_speed = getVerticalSpeed() - getWorld()->getPlayer()->getVerticalSpeed();
-    int horiz_speed = getHorizontalSpeed();
-    
-    int new_y = getY() + vert_speed;
-    int new_x = getX() + horiz_speed;
-    
-    this->moveTo(new_x, new_y);
-    
-    if(getX() < 0 || getX() > VIEW_WIDTH || getY() > VIEW_HEIGHT || getY() < 0)
-    {
-        this->killed();
-        return;
-    }
+    double horizSpeed = getHorizontalSpeed();
+    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
 }
 
 int ZombieCab::getMovementPlanDistance() const
@@ -662,7 +679,7 @@ void ZombieCab::doSomething()
                 
                 int random = randInt(0, 19);
                 
-                setDirection(60+random);
+                setDirection(60-random);
             }
             
             isDamaging();
@@ -671,20 +688,23 @@ void ZombieCab::doSomething()
     
     moveAndPossiblyPickPlan();
     
-    if(getVerticalSpeed() > getWorld()->getPlayer()->getVerticalSpeed())
+    double ghostRacerSpeed = getWorld()->getPlayer()->getVerticalSpeed();
+    double cabSpeed = getVerticalSpeed();
+    
+    if(cabSpeed > ghostRacerSpeed)
     {
         if(getWorld()->zombieCabDetect(this, 1))
         {
-            setVerticalSpeed(getVerticalSpeed() - 0.5);
+            setVerticalSpeed(cabSpeed - 0.5);
             return;
         }
     }
    
-    if(getVerticalSpeed() <= getWorld()->getPlayer()->getVerticalSpeed())
+    if(cabSpeed <= ghostRacerSpeed)
     {
         if(getWorld()->zombieCabDetect(this, 0))
         {
-            setVerticalSpeed(getVerticalSpeed() + 0.5);
+            setVerticalSpeed(cabSpeed + 0.5);
             return;
         }
     }
@@ -694,13 +714,9 @@ void ZombieCab::doSomething()
     if(getMovementPlanDistance() > 0)
         return;
     
-    int random = randInt(4, 32);
+    setMovementPlanDistance(randInt(4, 32));
     
-    setMovementPlanDistance(random);
-    
-    random = randInt(-2, 2);
-    
-    changeVerticalSpeed(random);
+    changeVerticalSpeed(randInt(-2, 2));
     
 }
 
@@ -714,19 +730,8 @@ OilSlick::OilSlick(StudentWorld* world, double x, double y): GhostRacerActivated
 
 void OilSlick::doSomething()
 {
-    int vert_speed = getVerticalSpeed() - getWorld()->getPlayer()->getVerticalSpeed();
-    int horiz_speed = getHorizontalSpeed();
-    
-    int new_y = getY() + vert_speed;
-    int new_x = getX() + horiz_speed;
-    
-    this->moveTo(new_x, new_y);
-    
-    if(getX() < 0 || getX() > VIEW_WIDTH || getY() > VIEW_HEIGHT || getY() < 0)
-    {
-        this->killed();
-        return;
-    }
+    double horizSpeed = getHorizontalSpeed();
+    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
     
     if(getWorld()->overlaps(this, getWorld()->getPlayer()))
     {
@@ -787,19 +792,8 @@ HealingGoodie::HealingGoodie(StudentWorld* world, double x, double y):GhostRacer
 
 void HealingGoodie::doSomething()
 {
-    int vert_speed = getVerticalSpeed() - getWorld()->getPlayer()->getVerticalSpeed();
-    int horiz_speed = getHorizontalSpeed();
-    
-    int new_y = getY() + vert_speed;
-    int new_x = getX() + horiz_speed;
-    
-    this->moveTo(new_x, new_y);
-    
-    if(getX() < 0 || getX() > VIEW_WIDTH || getY() > VIEW_HEIGHT || getY() < 0)
-    {
-        this->killed();
-        return;
-    }
+    double horizSpeed = getHorizontalSpeed();
+    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
     
     if(getWorld()->overlaps(this, getWorld()->getPlayer()))
     {
@@ -845,19 +839,8 @@ HolyWaterGoodie::HolyWaterGoodie(StudentWorld* world, double x, double y): Ghost
 
 void HolyWaterGoodie::doSomething()
 {
-    int vert_speed = getVerticalSpeed() - getWorld()->getPlayer()->getVerticalSpeed();
-    int horiz_speed = getHorizontalSpeed();
-    
-    int new_y = getY() + vert_speed;
-    int new_x = getX() + horiz_speed;
-    
-    this->moveTo(new_x, new_y);
-    
-    if(getX() < 0 || getX() > VIEW_WIDTH || getY() > VIEW_HEIGHT || getY() < 0)
-    {
-        this->killed();
-        return;
-    }
+    double horizSpeed = getHorizontalSpeed();
+    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
     
     if(getWorld()->overlaps(this, getWorld()->getPlayer()))
     {
@@ -896,19 +879,8 @@ SoulGoodie::SoulGoodie(StudentWorld* world, double x, double y):GhostRacerActiva
 
 void SoulGoodie::doSomething()
 {
-    int vert_speed = getVerticalSpeed() - getWorld()->getPlayer()->getVerticalSpeed();
-    int horiz_speed = getHorizontalSpeed();
-    
-    int new_y = getY() + vert_speed;
-    int new_x = getX() + horiz_speed;
-    
-    this->moveTo(new_x, new_y);
-    
-    if(getX() < 0 || getX() > VIEW_WIDTH || getY() > VIEW_HEIGHT || getY() < 0)
-    {
-        this->killed();
-        return;
-    }
+    double horizSpeed = getHorizontalSpeed();
+    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
     
     if(getWorld()->overlaps(this, getWorld()->getPlayer()))
     {

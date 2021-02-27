@@ -4,8 +4,6 @@
 #include "GraphObject.h"
 #include <iostream>
 
-#define PI 3.14159265
-
 class StudentWorld;
 
 using namespace std;
@@ -16,7 +14,7 @@ using namespace std;
 class Actor: public GraphObject
 {
 public:
-    Actor(StudentWorld* world, int imageID, double startX, double startY, int startDirection, double size, int depth, int verticalSpeed, int horizontalSpeed);
+    Actor(StudentWorld* world, int imageID, double startX, double startY, int startDirection, double size, int depth, double verticalSpeed, double horizontalSpeed);
     
     //doSomething
     virtual void doSomething() = 0;
@@ -25,12 +23,12 @@ public:
     StudentWorld* getWorld() const;
     
     //Speed
-    int getVerticalSpeed() const;
-    int getHorizontalSpeed() const;
-    void changeVerticalSpeed(int change);
-    void changeHorizontalSpeed(int change);
-    void setVerticalSpeed(int set);
-    void setHorizontalSpeed(int set); 
+    double getVerticalSpeed() const;
+    double getHorizontalSpeed() const;
+    void changeVerticalSpeed(double change);
+    void changeHorizontalSpeed(double change);
+    void setVerticalSpeed(double set);
+    void setHorizontalSpeed(double set); 
     
     virtual bool isDamagable() const;
     
@@ -39,6 +37,8 @@ public:
     virtual int doSomethingWhenHit();
     
     virtual bool beSprayedIfAppropriate();
+    
+    virtual bool moveRelativeToGhostRacerVerticalSpeed(double dx); 
     
     //Hit Related
     bool isHit();
@@ -54,8 +54,8 @@ public:
 private:
     bool m_alive = true;
     StudentWorld* m_world;
-    int m_verticalSpeed;
-    int m_horizontalSpeed;
+    double m_verticalSpeed;
+    double m_horizontalSpeed;
     bool m_isHit = false;
     
 };
@@ -65,7 +65,7 @@ private:
 class Agent: public Actor
 {
 public:
-    Agent(StudentWorld* world, int imageID, double x, double y, int dir, double size, int verticalSpeed, int horizontalSpeed, int hp);
+    Agent(StudentWorld* world, int imageID, double x, double y, int dir, double size, double verticalSpeed, double horizontalSpeed, int hp);
     
     virtual bool isCollisionAvoidanceWorthy() const;
     
@@ -137,9 +137,6 @@ class Pedestrian: public Agent
 public:
     Pedestrian(StudentWorld* world, int imageID, double startX, double startY, double size);
     
-    //Speed
-    void setHorizSpeed(int s);
-    
     //Plan
     void moveAndPossiblyPickPlan();
     void decrementMovementPlan();
@@ -201,16 +198,15 @@ private:
 class ZombieCab: public Agent
 {
 public:
-    ZombieCab(StudentWorld* world, double x, double y, int verticalSpeed);
+    ZombieCab(StudentWorld* world, double x, double y, double verticalSpeed);
     virtual void doSomething();
-    virtual bool isCollisionAvoidanceWorthy() const;
     
     //Plan
     void moveAndPossiblyPickPlan();
     int getMovementPlanDistance() const;
     void setMovementPlanDistance(int distance); 
     
-    //virtual bool beSprayedIfAppropriate();
+    virtual bool beSprayedIfAppropriate();
     
     //Damaged Ghost Racer
     bool hasDamaged() const;

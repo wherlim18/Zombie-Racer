@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <array>
 #include <algorithm>
+#include <iomanip>
 #include "Actor.h"
 
 const int N = VIEW_HEIGHT/SPRITE_HEIGHT;
@@ -39,43 +40,40 @@ int StudentWorld::init()
         //Initialize Left Yellow Borderline
         for(int j = 0; j < N; j++)
         {
-            int yValue = j*SPRITE_HEIGHT;
+            double yValue = j*SPRITE_HEIGHT;
             
-            m_actors.push_back(new BorderLine(this, IID_YELLOW_BORDER_LINE, LEFT_EDGE, yValue));
-            
-            //numberOfObjects++;
+            m_actors.push_front(new BorderLine(this, IID_YELLOW_BORDER_LINE, LEFT_EDGE, yValue));
         }
     
         //Initialize Right Yellow Borderline
         for(int j = 0; j < N; j++)
         {
-            int yValue = j*SPRITE_HEIGHT;
+            double yValue = j*SPRITE_HEIGHT;
             
             m_actors.push_front(new BorderLine(this, IID_YELLOW_BORDER_LINE, RIGHT_EDGE, yValue));
-            
-            //numberOfObjects++;
         }
     
         //Initialize Left White Borderline
         for(int j = 0; j < M; j++)
         {
-            int xValue = LEFT_EDGE + ROAD_WIDTH/3;
-            int yValue = j*(4*SPRITE_HEIGHT);
+            double xValue = LEFT_EDGE + ROAD_WIDTH/3;
+            double yValue = j*(4*SPRITE_HEIGHT);
             
-            m_actors.push_front(new BorderLine(this, IID_WHITE_BORDER_LINE, xValue, yValue));
-            
-            //numberOfObjects++;
+            m_actors.push_back(new BorderLine(this, IID_WHITE_BORDER_LINE, xValue, yValue));
         }
         
         //Initialize Right White Borderline
         for(int j = 0; j < M; j++)
         {
-            int xValue = RIGHT_EDGE - ROAD_WIDTH/3;
-            int yValue = j*(4*SPRITE_HEIGHT);
+            double xValue = RIGHT_EDGE - ROAD_WIDTH/3;
+            double yValue = j*(4*SPRITE_HEIGHT);
             
             m_actors.push_back(new BorderLine(this, IID_WHITE_BORDER_LINE, xValue, yValue));
             
-            //numberOfObjects++;
+            if(j == M-1)
+            {
+                lastY = yValue;
+            }
         }
     
     return GWSTATUS_CONTINUE_GAME;
@@ -108,20 +106,23 @@ int StudentWorld::move()
                     return (*it)->doSomethingWhenHit();
                 }
             }
-        }
-        
-        if(!getPlayer()->isAlive())
-        {
-            return GWSTATUS_PLAYER_DIED;
-        }
-        
-        if(getSoulSaved() == 2*getLevel()+5)
-        {
-            this->playSound(SOUND_FINISHED_LEVEL);
-            resetSoulSaved();
-            increaseScore(getBonusPoints());
-            resetBonusPoints();
-            return GWSTATUS_FINISHED_LEVEL;
+            
+            if(!getPlayer()->isAlive())
+            {
+                playSound(SOUND_PLAYER_DIE);
+                resetSoulSaved();
+                decLives();
+                return GWSTATUS_PLAYER_DIED;
+            }
+            
+            if(getSoulSaved() == /*2*getLevel()+5*/ 1)
+            {
+                this->playSound(SOUND_FINISHED_LEVEL);
+                resetSoulSaved();
+                increaseScore(getBonusPoints());
+                resetBonusPoints();
+                return GWSTATUS_FINISHED_LEVEL;
+            }
         }
     }
     
@@ -142,26 +143,25 @@ int StudentWorld::move()
     //Create new objects
     
     //Borderline
-    changeLastY(m_actors.back()->getY());
     
-    int new_border_y = VIEW_HEIGHT-SPRITE_HEIGHT;
-    int delta_y = new_border_y - lastY;
+    double  new_border_y = VIEW_HEIGHT-SPRITE_HEIGHT;
+    double  delta_y = new_border_y - lastY;
     
     if(delta_y >= SPRITE_HEIGHT)
     {
         m_actors.push_front(new BorderLine(this, IID_YELLOW_BORDER_LINE, ROAD_CENTER-ROAD_WIDTH/2, new_border_y));
         m_actors.push_front(new BorderLine(this, IID_YELLOW_BORDER_LINE, ROAD_CENTER+ROAD_WIDTH/2, new_border_y));
-        
-        //numberOfObjects += 2;
     }
     
     if(delta_y >= 4*SPRITE_HEIGHT)
     {
         m_actors.push_front(new BorderLine(this, IID_WHITE_BORDER_LINE, ROAD_CENTER-(ROAD_WIDTH/2)+(ROAD_WIDTH/3), new_border_y));
-        m_actors.push_back(new BorderLine(this, IID_WHITE_BORDER_LINE, ROAD_CENTER+(ROAD_WIDTH/2)-(ROAD_WIDTH/3), new_border_y));
+        m_actors.push_front(new BorderLine(this, IID_WHITE_BORDER_LINE, ROAD_CENTER+(ROAD_WIDTH/2)-(ROAD_WIDTH/3), new_border_y));
         
-        //numberOfObjects += 2;
+        lastY = new_border_y;
     }
+    
+    lastY = lastY - getPlayer()->getVerticalSpeed() - 4;
     
     //Human Pedestrian
     int ChanceHumanPed = max(200 - (getLevel()*10), 30);
@@ -220,7 +220,7 @@ int StudentWorld::move()
     
     // Zombie Cab
     
-    int ChanceVehicle = max(100 - (getLevel()*10), 20);
+    int ChanceVehicle = max(100 - (/*getLevel()*/15*10), 20);
     random = randInt(0, ChanceVehicle-1);
     
     if(random == 0)
@@ -267,16 +267,6 @@ StudentWorld::~StudentWorld()
 GhostRacer* StudentWorld::getPlayer() const
 {
     return m_player;
-}
-
-void StudentWorld::changeLastY(int new_y)
-{
-    lastY = new_y;
-}
-
-int StudentWorld::getLastY() const
-{
-    return lastY;
 }
 
 bool StudentWorld::overlaps(Actor* subject, Actor* object) const
@@ -344,6 +334,12 @@ void StudentWorld::addNewHealingGoodie(double x, double y)
 {
     m_actors.push_front(new HealingGoodie(this, x, y));
 }
+
+void StudentWorld::addNewOilSlick(double x , double y)
+{
+    m_actors.push_front(new OilSlick(this, x, y));
+}
+
 bool StudentWorld::zombieCabDetect(ZombieCab *p, int direction)
 {
     int current_x = p->getX();
@@ -369,9 +365,8 @@ bool StudentWorld::zombieCabDetect(ZombieCab *p, int direction)
     
     int current_y = p->getY();
     
-    int closest_y = 99999;
-    
-    Actor* target = nullptr;
+    int closest_y_front = 999;
+    int closest_y_behind = -999;
     
     // Check for collision-avoidance worthy actor BEHIND zombie cab
     if(direction == 0)
@@ -381,27 +376,16 @@ bool StudentWorld::zombieCabDetect(ZombieCab *p, int direction)
         for(; it != m_actors.end(); it++)
         {
             int object_x = (*it)->getX();
+            int object_y = (*it)->getY();
             
-            if((*it)->isCollisionAvoidanceWorthy() && object_x >= x_min && object_x < x_max && (*it) != p)
+            if((*it)->isCollisionAvoidanceWorthy() && object_x >= x_min && object_x < x_max && (*it) != p && object_y < current_y)
             {
-                int difference = (*it)->getY() - current_y;
-                if(abs(difference) < closest_y && difference < 0)
-                {
-                    closest_y = difference;
-                    target = (*it);
-                }
+                closest_y_behind = max(object_y, closest_y_behind);
             }
         }
         
-        if(getPlayer()->getX() >= x_min && getPlayer()->getX() < x_max)
-        {
-            int difference = getPlayer()->getY() - current_y;
-            if(abs(difference) < closest_y && difference < 0)
-            {
-                closest_y = difference;
-                target = getPlayer();
-            }
-        }
+        if(abs(closest_y_behind - current_y) < 96)
+            return true;
     }
     
     // Check for collision-avoidance worthy actor in FRONT zombie cab
@@ -409,36 +393,28 @@ bool StudentWorld::zombieCabDetect(ZombieCab *p, int direction)
     {
         list<Actor*>::iterator it = m_actors.begin();
         
+        if(getPlayer()->getX() >= x_min && getPlayer()->getX() < x_max && getPlayer()->getY() > current_y)
+        {
+            closest_y_front = getPlayer()->getY();
+        }
+        
         for(; it != m_actors.end(); it++)
         {
             int object_x = (*it)->getX();
+            int object_y = (*it)->getY();
             
-            if((*it)->isCollisionAvoidanceWorthy() && object_x >= x_min && object_x < x_max && (*it) != p)
+            if((*it)->isCollisionAvoidanceWorthy() && object_x >= x_min && object_x < x_max && (*it) != p && object_y > p->getY())
             {
-                int difference = (*it)->getY() - current_y;
-                if(abs(difference) < closest_y && difference > 0)
-                {
-                    closest_y = difference;
-                    target = (*it);
-                }
+                closest_y_front = min(object_y, closest_y_front);
             }
         }
         
-        if(getPlayer()->getX() >= x_min && getPlayer()->getX() < x_max)
+        if(abs(closest_y_front - current_y) < 96)
         {
-            int difference = getPlayer()->getY() - current_y;
-            if(abs(difference) < closest_y && difference > 0)
-            {
-                closest_y = difference;
-                target = (*it);
-            }
+            return true;
         }
     }
     
-    if(abs(closest_y) < 96 && target != nullptr && target != getPlayer())
-    {
-        return true;
-    }
     
     return false;
 }
@@ -469,15 +445,15 @@ void StudentWorld::determineZombieCabSpawn()
     //Input order into an array
     int order[3] = {first, second, third};
     
-    //Initialize Boundaries
+    //Declare Boundaries
     int leftBoundary;
     int rightBoundary;
     
-    //Initialize chosen values
+    //Declare chosen values
     int chosenLane;
-    int chosenY;
-    int chosenX;
-    int chosenSpeed;
+    double chosenY;
+    double chosenX;
+    double chosenSpeed;
     
     //Loop 3 times for each lane
     for(int i = 0; i < 2; i++)
@@ -505,9 +481,15 @@ void StudentWorld::determineZombieCabSpawn()
         }
         
         //Check for closest collision avoidance-worhty actors from the BOTTOM
-        Actor* target = nullptr;
         
         list<Actor*>::iterator it = m_actors.begin();
+        
+        if(getPlayer()->getX() >= leftBoundary && getPlayer()->getX() < rightBoundary)
+        {
+            int player_y = getPlayer()->getY();
+            
+            closest = min(player_y, closest);
+        }
         
         for(; it != m_actors.end(); it++)
         {
@@ -516,34 +498,11 @@ void StudentWorld::determineZombieCabSpawn()
             
             if(cur_x >= leftBoundary && cur_x < rightBoundary && (*it)->isCollisionAvoidanceWorthy())
             {
-                if(cur_y < closest)
-                {
-                    closest = cur_y;
-                    target = *it;
-                }
+                closest = min(cur_y, closest);
             }
         }
         
-        if(getPlayer()->getX() >= leftBoundary && getPlayer()->getX() < rightBoundary)
-        {
-            {
-                if(getPlayer()->getY() < closest)
-                {
-                    closest = getPlayer()->getY();
-                    target = getPlayer();
-                }
-            }
-        }
-        
-        if(target == nullptr)
-        {
-            chosenLane = cur_lane;
-            chosenY = SPRITE_HEIGHT/2;
-            chosenSpeed = getPlayer()->getVerticalSpeed() + randInt(2, 4);
-            foundSpawnPoint = true;
-            break;
-        }
-        else if (target != nullptr && target->getY() > VIEW_HEIGHT/3)
+        if(closest == 999 || closest > VIEW_HEIGHT/3)
         {
             chosenLane = cur_lane;
             chosenY = SPRITE_HEIGHT/2;
@@ -554,9 +513,16 @@ void StudentWorld::determineZombieCabSpawn()
         
         
         //Check for collision avoidance-worthy actors from the TOP
-        target = nullptr;
+        
         it = m_actors.begin();
-        closest = 999;
+        closest = -999;
+        
+        if(getPlayer()->getX() >= leftBoundary && getPlayer()->getX() < rightBoundary)
+        {
+            int player_y = getPlayer()->getY();
+            
+            closest = max(player_y, closest);
+        }
         
         for(; it != m_actors.end(); it++)
         {
@@ -565,35 +531,11 @@ void StudentWorld::determineZombieCabSpawn()
             
             if(cur_x >= leftBoundary && cur_x < rightBoundary && (*it)->isCollisionAvoidanceWorthy())
             {
-                if(255-cur_y < closest)
-                {
-                    closest = cur_y;
-                    target = *it;
-                }
+                closest = max(cur_y, closest);
             }
         }
         
-        if(getPlayer()->getX() >= leftBoundary && getPlayer()->getX() < rightBoundary)
-        {
-            {
-                if(255-getPlayer()->getY() < closest)
-                {
-                    closest = getPlayer()->getY();
-                    target = getPlayer();
-                }
-            }
-        }
-        
-        if(target == nullptr)
-        {
-            chosenLane = cur_lane;
-            chosenY = VIEW_HEIGHT - SPRITE_HEIGHT/2;
-            chosenSpeed = getPlayer()->getVerticalSpeed() - randInt(2, 4);
-            foundSpawnPoint = true;
-            break;
-        }
-        
-        else if (target != nullptr && target->getY() < (VIEW_HEIGHT * 2/3))
+        if(closest == -999 || closest < (VIEW_HEIGHT*2/3))
         {
             chosenLane = cur_lane;
             chosenY = VIEW_HEIGHT - SPRITE_HEIGHT/2;
@@ -605,7 +547,7 @@ void StudentWorld::determineZombieCabSpawn()
     }
     
     //If spawn point cannot be located, skip the tick
-    if(foundSpawnPoint == false)
+    if(!foundSpawnPoint)
         return;
     else
     {
@@ -619,7 +561,7 @@ void StudentWorld::determineZombieCabSpawn()
         }
         else
         {
-            chosenLane = ROAD_CENTER + (ROAD_WIDTH/3);
+            chosenX = ROAD_CENTER + (ROAD_WIDTH/3);
         }
         
         m_actors.push_front(new ZombieCab(this, chosenX, chosenY, chosenSpeed));
@@ -628,7 +570,10 @@ void StudentWorld::determineZombieCabSpawn()
 
 void StudentWorld::reduceBonusPoints()
 {
-    m_bonusPoints -= 1;
+    if(getBonusPoints() > 0)
+    {
+        m_bonusPoints -= 1;
+    }
 }
 
 int StudentWorld::getBonusPoints() const
@@ -639,4 +584,9 @@ int StudentWorld::getBonusPoints() const
 void StudentWorld::resetBonusPoints()
 {
     m_bonusPoints = 5000;
+}
+
+void StudentWorld::resetLastY()
+{
+    lastY = 0;
 }
