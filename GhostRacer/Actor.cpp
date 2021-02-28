@@ -62,23 +62,11 @@ void Actor::killed()
 {
     this->m_alive = false;
 }
-bool Actor::isHit()
-{
-    return m_isHit;
-}
-void Actor::gotHit()
-{
-    m_isHit = true;
-}
 
 //Actor Collision
 bool Actor::isCollisionAvoidanceWorthy() const
 {
     return false;
-}
-int Actor::doSomethingWhenHit()
-{
-    return -1;
 }
 
 //Actor Spray
@@ -322,7 +310,9 @@ BorderLine::BorderLine(StudentWorld* world, int imageID, double startX, double s
 void BorderLine::doSomething()
 {
     double horizSpeed = getHorizontalSpeed();
-    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
+    
+    if(moveRelativeToGhostRacerVerticalSpeed(horizSpeed) == false)
+        return;
 }
 
 // Spray Implementations
@@ -369,8 +359,6 @@ void Spray::doSomething()
         killed();
         return;
     }
-    
-    
 }
 
 // Pedestrian Implementations
@@ -420,12 +408,14 @@ void HumanPedestrian::doSomething()
     
     if(getWorld()->overlaps(this, getWorld()->getPlayer()))
     {
-        this->gotHit();
+        getWorld()->getPlayer()->killed();
         return;
     }
     
     int horizSpeed = getHorizontalSpeed();
-    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
+    
+    if(moveRelativeToGhostRacerVerticalSpeed(horizSpeed) == false)
+        return;
     
     decrementMovementPlan();
     
@@ -456,14 +446,6 @@ void HumanPedestrian::doSomething()
 
 }
 
-//Collision effects
-int HumanPedestrian::doSomethingWhenHit()
-{
-    getWorld()->decLives();
-    getWorld()->resetSoulSaved();
-    getWorld()->resetBonusPoints();
-    return GWSTATUS_PLAYER_DIED;
-}
 
 //Zombie Pedestrian Implementations
 
@@ -513,7 +495,8 @@ void ZombiePedestrian::doSomething()
     }
     
     int horizSpeed = getHorizontalSpeed();
-    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
+    if(moveRelativeToGhostRacerVerticalSpeed(horizSpeed) == false)
+        return;
     
     if(getMovementPlanDistance() > 0)
     {
@@ -636,7 +619,8 @@ bool ZombieCab::beSprayedIfAppropriate()
 void ZombieCab::moveAndPossiblyPickPlan()
 {
     double horizSpeed = getHorizontalSpeed();
-    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
+    if(moveRelativeToGhostRacerVerticalSpeed(horizSpeed) == false)
+        return;
 }
 
 int ZombieCab::getMovementPlanDistance() const
@@ -729,7 +713,8 @@ OilSlick::OilSlick(StudentWorld* world, double x, double y): GhostRacerActivated
 void OilSlick::doSomething()
 {
     double horizSpeed = getHorizontalSpeed();
-    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
+    if(moveRelativeToGhostRacerVerticalSpeed(horizSpeed) == false)
+        return;
     
     if(getWorld()->overlaps(this, getWorld()->getPlayer()))
     {
@@ -791,7 +776,8 @@ HealingGoodie::HealingGoodie(StudentWorld* world, double x, double y):GhostRacer
 void HealingGoodie::doSomething()
 {
     double horizSpeed = getHorizontalSpeed();
-    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
+    if(moveRelativeToGhostRacerVerticalSpeed(horizSpeed) == false)
+        return;
     
     if(getWorld()->overlaps(this, getWorld()->getPlayer()))
     {
@@ -838,7 +824,8 @@ HolyWaterGoodie::HolyWaterGoodie(StudentWorld* world, double x, double y): Ghost
 void HolyWaterGoodie::doSomething()
 {
     double horizSpeed = getHorizontalSpeed();
-    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
+    if(moveRelativeToGhostRacerVerticalSpeed(horizSpeed) == false)
+        return;
     
     if(getWorld()->overlaps(this, getWorld()->getPlayer()))
     {
@@ -878,7 +865,8 @@ SoulGoodie::SoulGoodie(StudentWorld* world, double x, double y):GhostRacerActiva
 void SoulGoodie::doSomething()
 {
     double horizSpeed = getHorizontalSpeed();
-    moveRelativeToGhostRacerVerticalSpeed(horizSpeed);
+    if(moveRelativeToGhostRacerVerticalSpeed(horizSpeed) == false)
+        return;
     
     if(getWorld()->overlaps(this, getWorld()->getPlayer()))
     {

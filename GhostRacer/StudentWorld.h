@@ -15,14 +15,16 @@ class GhostRacer;
 class StudentWorld : public GameWorld
 {
 public:
+    //Constructor
     StudentWorld(std::string assetPath);
-    ~StudentWorld();
+    
+    //Destructor
+    virtual ~StudentWorld();
+    
+    //Stuff
     virtual int init();
     virtual int move();
     virtual void cleanUp();
-    
-    //LastY functions
-    void resetLastY();
     
     //Get Ghost Racer
     GhostRacer* getPlayer() const;
@@ -49,7 +51,7 @@ public:
     int getBonusPoints() const;
     void resetBonusPoints();
     
-    //Goodies
+    //Goodies Add functions
     void addNewHealingGoodie(double x, double y);
     void addNewOilSlick(double x, double y);
     

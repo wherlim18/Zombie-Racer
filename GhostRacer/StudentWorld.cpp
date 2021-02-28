@@ -99,19 +99,12 @@ int StudentWorld::move()
         {
             (*it)->doSomething();
             
-            if(isCollisionWorthyObjects(*it))
-            {
-                if((*it)->isHit())
-                {
-                    return (*it)->doSomethingWhenHit();
-                }
-            }
-            
-            if(getPlayer()->getHP() <= 0)
+            if(getPlayer()->getHP() <= 0 || !getPlayer()->isAlive())
             {
                 playSound(SOUND_PLAYER_DIE);
                 resetSoulSaved();
                 decLives();
+                resetBonusPoints();
                 return GWSTATUS_PLAYER_DIED;
             }
             
@@ -245,9 +238,11 @@ int StudentWorld::move()
 
 void StudentWorld::cleanUp()
 {
+    //Delete ghost racer
     if(m_player != nullptr)
         delete m_player;
     
+    //Delete all objects
     list<Actor*>::iterator it = m_actors.begin();
     
     while(it != m_actors.end())
@@ -259,16 +254,19 @@ void StudentWorld::cleanUp()
     m_player = nullptr;
 }
 
+//Destructor
 StudentWorld::~StudentWorld()
 {
     cleanUp();
 }
 
+//Return a pointer to ghost racer
 GhostRacer* StudentWorld::getPlayer() const
 {
     return m_player;
 }
 
+//Check overlap
 bool StudentWorld::overlaps(Actor* subject, Actor* object) const
 {
     int delta_x = abs(subject->getX() - object->getX());
@@ -285,21 +283,21 @@ bool StudentWorld::overlaps(Actor* subject, Actor* object) const
     
 }
 
+//Soul functions
 void StudentWorld::recordSoulSaved()
 {
     m_soulSaved += 1;
 }
-
 int StudentWorld::getSoulSaved() const
 {
     return m_soulSaved;
 }
-
 void StudentWorld::resetSoulSaved()
 {
     m_soulSaved = 0;
 }
 
+//Identify function
 bool StudentWorld::isCollisionWorthyObjects(Actor* p)
 {
     if(p->isCollisionAvoidanceWorthy())
@@ -310,6 +308,7 @@ bool StudentWorld::isCollisionWorthyObjects(Actor* p)
     return false;
 }
 
+//Spray function
 bool StudentWorld::sprayFirstAppropriateActor(Actor *p)
 {
     list<Actor*>::iterator it = m_actors.begin();
@@ -324,22 +323,22 @@ bool StudentWorld::sprayFirstAppropriateActor(Actor *p)
     }
     return false;
 }
-
 void StudentWorld::addNewSpray(double x, double y, int dir)
 {
     m_actors.push_front(new Spray(this, x, y, dir));
 }
 
+//Spawn goodies functions
 void StudentWorld::addNewHealingGoodie(double x, double y)
 {
     m_actors.push_front(new HealingGoodie(this, x, y));
 }
-
 void StudentWorld::addNewOilSlick(double x , double y)
 {
     m_actors.push_front(new OilSlick(this, x, y));
 }
 
+//Zombie cab functions
 bool StudentWorld::zombieCabDetect(ZombieCab *p, int direction)
 {
     int current_x = p->getX();
@@ -568,6 +567,7 @@ void StudentWorld::determineZombieCabSpawn()
     }
 }
 
+//Bonus Points functions
 void StudentWorld::reduceBonusPoints()
 {
     if(getBonusPoints() > 0)
@@ -575,18 +575,11 @@ void StudentWorld::reduceBonusPoints()
         m_bonusPoints -= 1;
     }
 }
-
 int StudentWorld::getBonusPoints() const
 {
     return m_bonusPoints;
 }
-
 void StudentWorld::resetBonusPoints()
 {
     m_bonusPoints = 5000;
-}
-
-void StudentWorld::resetLastY()
-{
-    lastY = 0;
 }

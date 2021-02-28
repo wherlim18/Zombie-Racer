@@ -36,16 +36,9 @@ public:
     
     virtual bool isCollisionAvoidanceWorthy() const;
     
-    virtual int doSomethingWhenHit();
-    
     virtual bool beSprayedIfAppropriate();
     
-    virtual bool moveRelativeToGhostRacerVerticalSpeed(double dx); 
-    
-    //Hit Related functions
-    bool isHit();
-    void gotHit();
-    
+    bool moveRelativeToGhostRacerVerticalSpeed(double dx);
     
     //Health Related
     bool isAlive() const;
@@ -57,7 +50,6 @@ private:
     StudentWorld* m_world;
     double m_verticalSpeed;
     double m_horizontalSpeed;
-    bool m_isHit = false;
     
 };
 
@@ -102,6 +94,7 @@ public:
     
 protected:
     void moveGhostRacer();
+    
 private:
     int m_spray;
     
@@ -164,11 +157,13 @@ private:
 class HumanPedestrian: public Pedestrian
 {
 public:
+    //Constructor
     HumanPedestrian(StudentWorld* world, double startX, double startY);
+    
+    //doSomething
     virtual void doSomething();
     
-    virtual int doSomethingWhenHit();
-    
+    //Spray
     virtual bool beSprayedIfAppropriate();
     
 private:
@@ -180,10 +175,16 @@ private:
 class ZombiePedestrian: public Pedestrian
 {
 public:
+    //Constructor
     ZombiePedestrian(StudentWorld* world, double x, double y);
-    virtual void doSomething();
-    virtual bool beSprayedIfAppropriate();
     
+    //doSomething
+    virtual void doSomething();
+    
+    //Spray
+    virtual bool beSprayedIfAppropriate();
+
+protected:
     //Grunts
     int getUntilGrunt() const;
     void setUntilGrunt(int ticks);
@@ -197,15 +198,19 @@ private:
 class ZombieCab: public Agent
 {
 public:
+    //Constructor
     ZombieCab(StudentWorld* world, double x, double y, double verticalSpeed);
+    
+    //doSomething
     virtual void doSomething();
     
-    //Plan
+    //Spray
+    virtual bool beSprayedIfAppropriate();
+    
+protected: //Plan
     void moveAndPossiblyPickPlan();
     int getMovementPlanDistance() const;
     void setMovementPlanDistance(int distance); 
-    
-    virtual bool beSprayedIfAppropriate();
     
     //Damaged Ghost Racer
     bool hasDamaged() const;
@@ -222,10 +227,13 @@ private:
 class Spray: public Actor
 {
 public:
+    //Constructor
     Spray(StudentWorld* world, double x, double y, int dir);
+    
+    //doSomething
     virtual void doSomething();
     
-    //Maximum travel distance
+protected:    //Maximum travel distance
     int getMaximumTravel() const;
     void setMaximumTravel(int max);
     
@@ -238,7 +246,10 @@ private:
 class OilSlick: public GhostRacerActivatedObject
 {
 public:
+    //Constructor
     OilSlick(StudentWorld* world, double x, double y);
+    
+    //Stuff
     virtual void doSomething();
     virtual void doActivity(GhostRacer* gr);
     virtual int getScoreIncrease() const;
@@ -253,7 +264,10 @@ private:
 class HealingGoodie : public GhostRacerActivatedObject
 {
 public:
+    //Constructor
     HealingGoodie(StudentWorld* world, double x, double y);
+    
+    //Stuff
     virtual void doSomething();
     virtual void doActivity(GhostRacer* gr);
     virtual int getScoreIncrease() const;
@@ -261,11 +275,14 @@ public:
     virtual bool isSprayable() const; 
 };
 
-//Derived Class: Holy Water GOodie
+//Derived Class: Holy Water Goodie
 class HolyWaterGoodie : public GhostRacerActivatedObject
 {
 public:
+    //Constructor
     HolyWaterGoodie(StudentWorld* world, double x, double y);
+    
+    //Stuff
     virtual void doSomething();
     virtual void doActivity(GhostRacer* gr);
     virtual int getScoreIncrease() const;
@@ -277,7 +294,10 @@ public:
 class SoulGoodie : public GhostRacerActivatedObject
 {
 public:
+    //Constructor
     SoulGoodie(StudentWorld* world, double x, double y);
+    
+    //Stuff
     virtual void doSomething();
     virtual void doActivity(GhostRacer* gr);
     virtual int getScoreIncrease() const;
